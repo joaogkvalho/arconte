@@ -18,7 +18,7 @@ enum APIEndpoint {
             return "/games"
             
         case .gameDetails(let id):
-            return "games/\(id)"
+            return "/games/\(id)"
         }
     }
     

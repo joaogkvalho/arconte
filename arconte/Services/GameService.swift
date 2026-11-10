@@ -21,4 +21,8 @@ struct GameService {
     func searchGames(query: String, offset: Int = 0) async throws -> [Game] {
         try await apiClient.request(.searchGames(query: query, offset: offset))
     }
+    
+    func fetchGameDetails(id: Int) async throws -> Game {
+        try await apiClient.request(.gameDetails(id: id))
+    }
 }

@@ -10,6 +10,8 @@ import SwiftUI
 struct GameCoverImage: View {
     let cover: GameCover?
     
+    private let cornerRadius: CGFloat = 12
+    
     private var imageURL: URL? {
         guard let rawURL = cover?.url else {
             return nil
@@ -23,32 +25,49 @@ struct GameCoverImage: View {
     }
     
     var body: some View {
-        Group {
-            if let imageURL {
-                AsyncImage(url: imageURL) { phase in
-                    switch phase {
-                    case .empty:
-                        placeholder
-                        
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .scaledToFill()
-                        
-                    case .failure:
-                        placeholder
-                        
-                    @unknown default:
-                        placeholder
+        GeometryReader { geometry in
+            ZStack {
+                Color.arconteElevated
+                
+                if let imageURL {
+                    AsyncImage(url: imageURL) { phase in
+                        switch phase {
+                        case .empty:
+                            ProgressView()
+                                .tint(.arcontePurple)
+
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .scaledToFill()
+                                .frame(
+                                    width: geometry.size.width,
+                                    height: geometry.size.height
+                                )
+                                .clipped()
+
+                        case .failure:
+                            placeholder
+
+                        @unknown default:
+                            placeholder
+                        }
                     }
+                } else {
+                    placeholder
                 }
-            } else {
-                placeholder
             }
+            .frame(
+                width: geometry.size.width,
+                height: geometry.size.height
+            )
+            .clipShape(
+                RoundedRectangle(
+                    cornerRadius: cornerRadius,
+                    style: .continuous
+                )
+            )
         }
-        .frame(width: 80, height: 80)
-        .background(Color.gray.opacity(0.15))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
     }
     
     private var placeholder: some View {
@@ -57,8 +76,4 @@ struct GameCoverImage: View {
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
-}
-
-#Preview {
-    GameCoverImage(cover: nil)
 }

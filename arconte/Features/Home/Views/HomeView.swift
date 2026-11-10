@@ -13,62 +13,80 @@ struct HomeView: View {
     
     var body: some View {
         NavigationStack {
-            Group {
-                if viewModel.isLoading && viewModel.games.isEmpty {
-                    ProgressView("Loading games...")
-                } else if let errorMessage = viewModel.errorMessage {
-                    errorView(message: errorMessage)
-                } else if viewModel.games.isEmpty {
-                    ContentUnavailableView(
-                        "No games found",
-                        systemImage: "gamecontroller",
-                        description: Text("There are no games available right now.")
-                    )
-                } else {
-                    gamesList
+            VStack(spacing: 0) {
+                HomeHeader()
+                
+                Group {
+                    if viewModel.isLoading && viewModel.games.isEmpty {
+                        ProgressView("Loading games...")
+                            .tint(.arcontePurple)
+                    } else if let errorMessage = viewModel.errorMessage {
+                        errorView(message: errorMessage)
+                    } else if viewModel.games.isEmpty {
+                        ContentUnavailableView(
+                            "No games found",
+                            systemImage: "gamecontroller",
+                            description: Text("There are no games available right now.")
+                        )
+                    } else {
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: 24) {
+                                if let featuredGame = viewModel.featuredGame ?? viewModel.games.first {
+                                    NavigationLink {
+                                        GameDetailsView(gameID: featuredGame.id)
+                                    } label: {
+                                        FeaturedGameCard(game: featuredGame)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .padding(.horizontal, 20)
+                                }
+                                
+                                gamesList
+                            }
+                            .padding(.vertical, 12)
+                        }
+                    }
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .navigationTitle("Arconte")
+            .background(Color.arconteBackground)
+            .toolbar(.hidden, for: .navigationBar)
         }
+        .preferredColorScheme(.dark)
         .task {
             await viewModel.loadPopularGames()
         }
     }
     
-    private var gamesList: some View {
-        List(viewModel.games) { game in
-            HStack(alignment: .center, spacing: 12) {
-                GameCoverImage(cover: game.cover)
-                
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(game.name)
-                        .font(.headline)
-                    
-                    if let rating = game.rating {
-                        HStack(alignment: .center, spacing: 3) {
-                            Image(systemName: "star.fill")
 
-                            Text(String(format: "%.1f", rating))
-                        }
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                    }
-                    
-                    if let genres = game.genres, !genres.isEmpty {
-                        Text(genres.map(\.name).joined(separator: " • "))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    
-                    Spacer(minLength: 0)
+    private var gamesList: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Text("Popular Games")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(Color.arconteTextPrimary)
+
+                Spacer()
+
+                Button("See all") {
+                    // Implementaremos posteriormente.
                 }
-                .padding(.vertical, 4)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(Color.arcontePurple)
+            }
+            .padding(.horizontal, 20)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(alignment: .top, spacing: 14) {
+                    ForEach(viewModel.games) { game in
+                        GameHorizontalCard(game: game)
+                    }
+                }
+                .padding(.horizontal, 20)
             }
         }
-        .refreshable {
-            await viewModel.loadPopularGames()
-        }
     }
+
     
     private func errorView(message: String) -> some View {
         ContentUnavailableView {

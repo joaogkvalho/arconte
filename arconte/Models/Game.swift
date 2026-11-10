@@ -16,6 +16,7 @@ struct Game: Decodable, Identifiable {
     let genres: [GameGenre]?
     let platforms: [GamePlatform]?
     let cover: GameCover?
+    let screenshots: [GameScreenshot]?
 }
 
 struct GameGenre: Decodable, Identifiable {
@@ -29,6 +30,11 @@ struct GamePlatform: Decodable, Identifiable {
 }
 
 struct GameCover: Decodable {
+    let id: Int
+    let url: String
+}
+
+struct GameScreenshot: Decodable, Identifiable {
     let id: Int
     let url: String
 }
