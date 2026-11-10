@@ -8,14 +8,20 @@
 import SwiftUI
 
 struct GameCoverImage: View {
-    let cover: GameCover?
+    let coverURL: String?
     
     private let cornerRadius: CGFloat = 12
     
+    init(cover: GameCover?) {
+        self.coverURL = cover?.url
+    }
+    
+    init(coverURL: String?) {
+        self.coverURL = coverURL
+    }
+    
     private var imageURL: URL? {
-        guard let rawURL = cover?.url else {
-            return nil
-        }
+        guard let rawURL = coverURL else { return nil }
         
         let normalizedURL = rawURL.hasPrefix("//")
             ? "https:\(rawURL)"

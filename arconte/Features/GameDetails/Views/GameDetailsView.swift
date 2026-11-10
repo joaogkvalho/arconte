@@ -89,6 +89,9 @@ struct GameDetailsView: View {
                     .padding(.top, 36)
                     
                     Spacer()
+                    
+                    FavoriteButton(game: game)
+                        .padding(.top, 36)
                 }
                 
                 Spacer()

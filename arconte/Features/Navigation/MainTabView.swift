@@ -39,17 +39,9 @@ struct MainTabView: View {
                 case .search:
                     SearchView()
                 case .favorites:
-                    placeholderView(
-                        title: "Favorites",
-                        description: "Your saved games will appear here.",
-                        icon: "heart"
-                    )
+                    FavoritesView()
                 case .profile:
-                    placeholderView(
-                        title: "Profile",
-                        description: "Your profile and preferences.",
-                        icon: "person.crop.circle"
-                    )
+                    ProfileView()
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)

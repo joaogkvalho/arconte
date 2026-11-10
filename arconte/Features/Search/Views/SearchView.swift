@@ -166,7 +166,7 @@ struct SearchView: View {
             .padding(.bottom, 120)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .scrollDismissesKeyboard(.interactively)
+        .scrollDismissesKeyboard(.immediately)
     }
     
     private func searchResultCard(_ game: Game) -> some View {

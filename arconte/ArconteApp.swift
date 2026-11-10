@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 @main
 struct ArconteApp: App {
@@ -13,5 +14,6 @@ struct ArconteApp: App {
         WindowGroup {
            MainTabView()
         }
+        .modelContainer(for: FavoriteGame.self)
     }
 }
