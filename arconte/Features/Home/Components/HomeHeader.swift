@@ -8,25 +8,32 @@
 import SwiftUI
 
 struct HomeHeader: View {
+    @AppStorage("profileNickname")
+    private var nickname = "Player One"
+    
     var body: some View {
-        HStack(spacing: 10) {
-            Text("ARCONTE")
-                .font(.system(size: 20, weight: .black, design: .none))
-                .tracking(0.5)
-                .foregroundStyle(Color.arconteTextPrimary)
+        VStack(alignment: .leading, spacing: 18) {
+            HStack {
+                Text("ARCONTE")
+                    .font(.system(size: 22, weight: .black))
+                    .tracking(1)
+                    .foregroundStyle(Color.arconteTextPrimary)
+                
+                Spacer()
+            }
             
-            Spacer()
+            VStack(alignment: .leading, spacing: 5) {
+                Text("Welcome back, \(nickname)")
+                    .font(.system(size: 24, weight: .bold))
+                    .foregroundStyle(Color.arconteTextPrimary)
+                
+                Text("Ready for your next adventure?")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(Color.arconteTextSecondary)
+            }
         }
         .padding(.horizontal, 20)
-        .padding(.vertical, 16)
-    }
-}
-
-#Preview {
-    ZStack {
-        Color.arconteBackground
-            .ignoresSafeArea()
-        
-        HomeHeader()
+        .padding(.top, 16)
+        .padding(.bottom, 24)
     }
 }

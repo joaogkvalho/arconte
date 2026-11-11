@@ -11,11 +11,37 @@ import SwiftUI
 struct HomeView: View {
     @State private var viewModel = HomeViewModel()
     
+    private var gamesForSections: [Game] {
+        viewModel.games.filter {
+            $0.id != (viewModel.featuredGame ?? viewModel.games.first)?.id
+        }
+    }
+    
+    private var popularGames: [Game] {
+        Array(gamesForSections.prefix(6))
+    }
+    
+    private var moreToExploreGames: [Game] {
+        Array(gamesForSections.dropFirst(6))
+    }
+    
+    private var availableGenres: [GameGenre] {
+        var uniqueGenres: [Int: GameGenre] = [:]
+
+        for game in viewModel.games {
+            for genre in game.genres ?? [] {
+                uniqueGenres[genre.id] = genre
+            }
+        }
+
+        return uniqueGenres.values.sorted {
+            $0.name < $1.name
+        }
+    }
+    
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                HomeHeader()
-                
                 Group {
                     if viewModel.isLoading && viewModel.games.isEmpty {
                         ProgressView("Loading games...")
@@ -30,7 +56,9 @@ struct HomeView: View {
                         )
                     } else {
                         ScrollView {
-                            VStack(alignment: .leading, spacing: 24) {
+                            HomeHeader()
+                            
+                            VStack(alignment: .leading, spacing: 30) {
                                 if let featuredGame = viewModel.featuredGame ?? viewModel.games.first {
                                     NavigationLink {
                                         GameDetailsView(gameID: featuredGame.id)
@@ -40,11 +68,21 @@ struct HomeView: View {
                                     .buttonStyle(.plain)
                                     .padding(.horizontal, 20)
                                 }
+
+                                popularGamesSection
+
+                                if !moreToExploreGames.isEmpty {
+                                    moreToExploreSection
+                                }
                                 
-                                gamesList
+                                if !availableGenres.isEmpty {
+                                    browseByGenreSection
+                                }
                             }
-                            .padding(.vertical, 12)
+                            .padding(.top, 12)
+                            .padding(.bottom, 120)
                         }
+                        .scrollIndicators(.hidden)
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -57,9 +95,8 @@ struct HomeView: View {
             await viewModel.loadPopularGames()
         }
     }
-    
 
-    private var gamesList: some View {
+    private var popularGamesSection: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
                 Text("Popular Games")
@@ -67,18 +104,12 @@ struct HomeView: View {
                     .foregroundStyle(Color.arconteTextPrimary)
 
                 Spacer()
-
-                Button("See all") {
-                    // Implementaremos posteriormente.
-                }
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(Color.arcontePurple)
             }
             .padding(.horizontal, 20)
 
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .top, spacing: 14) {
-                    ForEach(viewModel.games) { game in
+                    ForEach(popularGames) { game in
                         GameHorizontalCard(game: game)
                     }
                 }
@@ -87,6 +118,53 @@ struct HomeView: View {
         }
     }
 
+    private var moreToExploreSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 5) {
+                Text("More to Explore")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(Color.arconteTextPrimary)
+
+                Text("More games worth checking out.")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(Color.arconteTextSecondary)
+            }
+            .padding(.horizontal, 20)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: 14) {
+                    ForEach(moreToExploreGames) { game in
+                        GameDiscoveryCard(game: game)
+                    }
+                }
+                .padding(.horizontal, 20)
+            }
+        }
+    }
+    
+    private var browseByGenreSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 5) {
+                Text("Browse by Genre")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(Color.arconteTextPrimary)
+
+                Text("Explore games by your favorite categories.")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(Color.arconteTextSecondary)
+            }
+            .padding(.horizontal, 20)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: 12) {
+                    ForEach(availableGenres) { genre in
+                        GenreCard(genre: genre)
+                    }
+                }
+                .padding(.horizontal, 20)
+            }
+        }
+    }
     
     private func errorView(message: String) -> some View {
         ContentUnavailableView {
@@ -102,8 +180,4 @@ struct HomeView: View {
             .buttonStyle(.borderedProminent)
         }
     }
-}
-
-#Preview {
-    HomeView()
 }

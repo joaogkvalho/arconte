@@ -5,6 +5,7 @@
 //  Created by Joao Gabriel Carvalho on 09/11/26.
 //
 
+
 import SwiftUI
 
 struct GameHorizontalCard: View {
@@ -14,30 +15,41 @@ struct GameHorizontalCard: View {
         NavigationLink {
             GameDetailsView(gameID: game.id)
         } label: {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 10) {
                 GameCoverImage(cover: game.cover)
-                    .frame(width: 140, height: 190)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .frame(width: 145, height: 195)
+                    .clipShape(
+                        RoundedRectangle(
+                            cornerRadius: 14,
+                            style: .continuous
+                        )
+                    )
 
                 Text(game.name)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(Color.arconteTextPrimary)
                     .lineLimit(2)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .multilineTextAlignment(.leading)
+                    .frame(
+                        maxWidth: .infinity,
+                        alignment: .topLeading
+                    )
 
                 if let rating = game.rating {
-                    HStack(spacing: 4) {
+                    HStack(spacing: 5) {
                         Image(systemName: "star.fill")
                             .foregroundStyle(Color.arcontePurple)
 
-                        Text(String(format: "%.1f", rating))
+                        Text(String(format: "%.1f", rating / 10))
                             .foregroundStyle(Color.arconteTextSecondary)
                     }
                     .font(.system(size: 12, weight: .medium))
                 }
             }
-            .frame(width: 140, alignment: .leading)
+            .frame(width: 145, alignment: .leading)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
 }
+

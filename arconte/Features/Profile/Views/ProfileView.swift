@@ -60,6 +60,9 @@ struct ProfileView: View {
                 selectedAvatar: $selectedAvatar
             )
         }
+        .sheet(isPresented: $showingAbout) {
+            AboutArconteView()
+        }
     }
     
     private var profileHeader: some View {
@@ -164,9 +167,6 @@ struct ProfileView: View {
                     }
                 }
                 .buttonStyle(.plain)
-                .sheet(isPresented: $showingAbout) {
-                    AboutArconteView()
-                }
             }
             .padding(.horizontal, 16)
             .background(Color.arconteElevated)

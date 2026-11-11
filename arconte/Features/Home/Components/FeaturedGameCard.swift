@@ -5,6 +5,7 @@
 //  Created by Joao Gabriel Carvalho on 09/11/26.
 //
 
+
 import SwiftUI
 
 struct FeaturedGameCard: View {
@@ -31,10 +32,10 @@ struct FeaturedGameCard: View {
 
         return genres.map(\.name).joined(separator: " • ")
     }
-    
+
     var body: some View {
         GeometryReader { geometry in
-            ZStack(alignment: .bottomLeading) {
+            ZStack {
                 backgroundImage
                     .frame(
                         width: geometry.size.width,
@@ -44,52 +45,83 @@ struct FeaturedGameCard: View {
 
                 LinearGradient(
                     stops: [
-                        .init(color: .clear, location: 0.15),
-                        .init(color: .black.opacity(0.25), location: 0.45),
-                        .init(color: .black.opacity(0.65), location: 0.75),
-                        .init(color: .black.opacity(0.92), location: 1.0)
+                        .init(color: .black.opacity(0.15), location: 0),
+                        .init(color: .clear, location: 0.3),
+                        .init(color: .black.opacity(0.45), location: 0.55),
+                        .init(color: .black.opacity(0.9), location: 1)
                     ],
                     startPoint: .top,
                     endPoint: .bottom
                 )
 
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("FEATURED GAME")
-                        .font(.system(size: 10, weight: .bold))
-                        .tracking(2.2)
-                        .foregroundStyle(Color.arcontePurple)
-
-                    Text(game.name)
-                        .font(.system(size: 25, weight: .bold))
-                        .foregroundStyle(.white)
-                        .lineLimit(2)
-
-                    HStack(spacing: 12) {
-                        if let rating = game.rating {
-                            HStack(spacing: 4) {
-                                Image(systemName: "star.fill")
-
-                                Text(String(format: "%.0f", rating))
-                            }
+                VStack(alignment: .leading, spacing: 0) {
+                    HStack {
+                        Text("FEATURED GAME")
+                            .font(.system(size: 10, weight: .bold))
+                            .tracking(2)
                             .foregroundStyle(Color.arcontePurple)
-                        }
+                            .padding(.horizontal, 11)
+                            .padding(.vertical, 7)
+                            .background {
+                                Capsule()
+                                    .fill(Color.black.opacity(0.75))
+                            }
+                            .overlay {
+                                Capsule()
+                                    .strokeBorder(.white.opacity(0.12), lineWidth: 1)
+                            }
 
-                        Text(genresText)
-                            .foregroundStyle(.white.opacity(0.8))
-                            .lineLimit(1)
-                            .truncationMode(.tail)
+                        Spacer()
+
+                        Image(systemName: "arrow.up.right")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .frame(width: 34, height: 34)
+                            .background(.black.opacity(0.35))
+                            .clipShape(Circle())
                     }
-                    .font(.system(size: 12, weight: .medium))
+
+                    Spacer()
+
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text(game.name)
+                            .font(.system(size: 26, weight: .bold))
+                            .foregroundStyle(.white)
+                            .lineLimit(2)
+                            .multilineTextAlignment(.leading)
+
+                        HStack(spacing: 14) {
+                            if let rating = game.rating {
+                                HStack(spacing: 5) {
+                                    Image(systemName: "star.fill")
+                                        .foregroundStyle(Color.arcontePurple)
+
+                                    Text(String(format: "%.1f", rating / 10))
+                                        .foregroundStyle(.white)
+                                }
+                            }
+
+                            Text(genresText)
+                                .foregroundStyle(.white.opacity(0.8))
+                                .lineLimit(1)
+                                .truncationMode(.tail)
+                        }
+                        .font(.system(size: 12, weight: .medium))
+                    }
                 }
                 .padding(20)
-                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .clipShape(RoundedRectangle(cornerRadius: 18))
+            .clipShape(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .strokeBorder(.white.opacity(0.08), lineWidth: 1)
+            }
         }
-        .frame(height: 230)
+        .frame(height: 250)
         .frame(maxWidth: .infinity)
     }
-
 
     @ViewBuilder
     private var backgroundImage: some View {
@@ -124,22 +156,3 @@ struct FeaturedGameCard: View {
     }
 }
 
-#Preview {
-    FeaturedGameCard(
-        game: Game(
-            id: 1,
-            name: "Example Game",
-            summary: nil,
-            rating: 92.5,
-            firstReleaseDate: nil,
-            genres: [
-                GameGenre(id: 1, name: "Adventure"),
-                GameGenre(id: 2, name: "RPG")
-            ],
-            platforms: nil,
-            cover: nil,
-            screenshots: nil
-        )
-    )
-    .padding()
-}

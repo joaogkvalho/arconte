@@ -14,6 +14,11 @@ struct ArconteApp: App {
         WindowGroup {
            MainTabView()
         }
-        .modelContainer(for: FavoriteGame.self)
+        .modelContainer(
+            for: [
+                FavoriteGame.self,
+                RecentlyViewedGame.self
+            ]
+        )
     }
 }

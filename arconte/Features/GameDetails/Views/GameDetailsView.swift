@@ -117,25 +117,39 @@ struct GameDetailsView: View {
     @ViewBuilder
     private func heroImage(for game: Game) -> some View {
         let rawURL = game.screenshots?.first?.url ?? game.cover?.url
-        
+
         if let rawURL, let url = imageURL(from: rawURL) {
             AsyncImage(url: url) { phase in
                 switch phase {
+                case .empty:
+                    heroLoadingPlaceholder
+
                 case .success(let image):
                     image
                         .resizable()
                         .scaledToFill()
-                    
-                case .empty, .failure:
+
+                case .failure:
                     heroPlaceholder
-                    
+
                 @unknown default:
                     heroPlaceholder
                 }
             }
+        } else {
+            heroPlaceholder
         }
     }
-    
+
+    private var heroLoadingPlaceholder: some View {
+        Rectangle()
+            .fill(Color.arconteElevated)
+            .overlay {
+                ProgressView()
+                    .tint(.arcontePurple)
+            }
+    }
+
     private var heroPlaceholder: some View {
         Rectangle()
             .fill(Color.arconteElevated)
@@ -199,41 +213,74 @@ struct GameDetailsView: View {
         .padding(.horizontal, 20)
     }
     
+    @ViewBuilder
     private func screenshotsSections(for game: Game) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("Screenshots")
-                .font(.system(size: 20, weight: .bold))
-                .foregroundStyle(Color.arconteTextPrimary)
-                .padding(.horizontal, 20)
-            
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: 12) {
-                    ForEach(game.screenshots ?? []) { screenshot in
-                        if let url = imageURL(from: screenshot.url) {
-                            AsyncImage(url: url) { phase in
-                                if let image = phase.image {
-                                    image
-                                        .resizable()
-                                        .scaledToFill()
-                                } else {
-                                    Rectangle()
-                                        .fill(Color.arconteElevated)
-                                        .overlay {
-                                            ProgressView()
-                                                .tint(.arcontePurple)
-                                        }
-                                }
-                            }
-                            .frame(width: 250, height: 145)
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
+        if let screenshots = game.screenshots, !screenshots.isEmpty {
+            VStack(alignment: .leading, spacing: 14) {
+                Text("Screenshots")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(Color.arconteTextPrimary)
+                    .padding(.horizontal, 20)
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    LazyHStack(spacing: 12) {
+                        ForEach(screenshots) { screenshot in
+                            screenshotCard(for: screenshot)
                         }
                     }
+                    .padding(.horizontal, 20)
                 }
-                .padding(.horizontal, 20)
             }
         }
     }
-    
+
+    private func screenshotCard(for screenshot: GameScreenshot) -> some View {
+        Group {
+            if let url = imageURL(from: screenshot.url) {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .empty:
+                        screenshotLoadingPlaceholder
+
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+
+                    case .failure:
+                        screenshotPlaceholder
+
+                    @unknown default:
+                        screenshotPlaceholder
+                    }
+                }
+            } else {
+                screenshotPlaceholder
+            }
+        }
+        .frame(width: 250, height: 145)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    private var screenshotLoadingPlaceholder: some View {
+        Rectangle()
+            .fill(Color.arconteElevated)
+            .overlay {
+                ProgressView()
+                    .tint(.arcontePurple)
+            }
+    }
+
+    private var screenshotPlaceholder: some View {
+        Rectangle()
+            .fill(Color.arconteElevated)
+            .overlay {
+                Image(systemName: "photo")
+                    .font(.system(size: 24))
+                    .foregroundStyle(Color.arconteTextSecondary)
+            }
+    }
+
     private func imageURL(from rawURL: String) -> URL? {
         let normalizedURL = rawURL.hasPrefix("//")
             ? "https:\(rawURL)"

@@ -6,18 +6,69 @@
 //
 
 import SwiftUI
+import SwiftData
 
 @MainActor
 struct SearchView: View {
+    @Environment(\.modelContext) private var modelContext
+    
     @State private var viewModel = SearchViewModel()
     @State private var searchText = ""
     
     @FocusState private var isSearchFocused: Bool
     
+    @Query(
+        sort: \RecentlyViewedGame.viewedAt,
+        order: .reverse
+    )
+    private var recentlyViewedGames: [RecentlyViewedGame]
+    
     private let columns = [
         GridItem(.flexible(), spacing: 14, alignment: .top),
         GridItem(.flexible(), spacing: 14, alignment: .top),
     ]
+    
+    private let searchSuggestions = [
+        "Elden Ring",
+        "Cyberpunk 2077",
+        "Minecraft",
+        "God of War",
+        "The Witcher 3"
+    ]
+    
+    private func recordRecentlyViewed(_ game: Game) {
+        let gameID = game.id
+
+        let descriptor = FetchDescriptor<RecentlyViewedGame>(
+            predicate: #Predicate { item in
+                item.gameID == gameID
+            }
+        )
+
+        do {
+            let existingGame = try modelContext.fetch(descriptor).first
+
+            if let existingGame {
+                existingGame.name = game.name
+                existingGame.coverURL = game.cover?.url
+                existingGame.rating = game.rating
+                existingGame.viewedAt = .now
+            } else {
+                let recentlyViewedGame = RecentlyViewedGame(
+                    gameID: game.id,
+                    name: game.name,
+                    coverURL: game.cover?.url,
+                    rating: game.rating
+                )
+
+                modelContext.insert(recentlyViewedGame)
+            }
+
+            try modelContext.save()
+        } catch {
+            print("Failed to save recently viewed game: \(error)")
+        }
+    }
     
     var body: some View {
         NavigationStack {
@@ -44,7 +95,7 @@ struct SearchView: View {
                     in: .whitespacesAndNewlines
                 )
                 
-                guard !query.isEmpty else {
+                guard query.count >= 2 else {
                     viewModel.clearSearch()
                     return
                 }
@@ -108,12 +159,9 @@ struct SearchView: View {
     @ViewBuilder
     private var searchContent: some View {
         if searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            ContentUnavailableView(
-                "Find your next game",
-                systemImage: "gamecontroller",
-                description: Text("Search for your favorite games.")
-            )
-            .foregroundStyle(Color.arconteTextSecondary)
+            emptySearchState
+        } else if searchText.trimmingCharacters(in: .whitespacesAndNewlines).count < 2 {
+            minimumQueryState
         } else if viewModel.isLoading && viewModel.games.isEmpty {
             ProgressView()
                 .tint(.arcontePurple)
@@ -149,16 +197,59 @@ struct SearchView: View {
                 Text("Search Results")
                     .font(.system(size: 18, weight: .bold))
                     .foregroundStyle(Color.arconteTextPrimary)
-                
+
                 LazyVGrid(columns: columns, spacing: 20) {
                     ForEach(viewModel.games) { game in
                         NavigationLink {
                             GameDetailsView(gameID: game.id)
+
                         } label: {
                             searchResultCard(game)
                         }
                         .buttonStyle(.plain)
+                        .simultaneousGesture(
+                            TapGesture().onEnded {
+                                recordRecentlyViewed(game)
+                            }
+                        )
                     }
+
+                    if viewModel.paginationErrorMessage != nil {
+                        VStack(spacing: 8) {
+                            Text("Couldn't load more games")
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundStyle(Color.arconteTextSecondary)
+
+                            Button("Try again") {
+                                Task {
+                                    await viewModel.loadMoreGames()
+                                }
+                            }
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(Color.arcontePurple)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .gridCellColumns(2)
+                        .padding(.vertical, 16)
+                    }
+
+                    if !viewModel.games.isEmpty {
+                        Color.clear
+                            .frame(height: 1)
+                            .gridCellColumns(2)
+                            .onAppear {
+                                Task {
+                                    await viewModel.loadMoreGames()
+                                }
+                            }
+                    }
+                }
+                
+                if viewModel.isLoadingMore {
+                    ProgressView()
+                        .tint(.arcontePurple)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.vertical, 20)
                 }
             }
             .padding(.horizontal, 20)
@@ -168,7 +259,7 @@ struct SearchView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .scrollDismissesKeyboard(.immediately)
     }
-    
+
     private func searchResultCard(_ game: Game) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             GameCoverImage(cover: game.cover)
@@ -200,5 +291,106 @@ struct SearchView: View {
         }
         .frame(maxWidth: .infinity, alignment: .topLeading)
         .contentShape(Rectangle())
+    }
+    
+    private var emptySearchState: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 28) {
+                if !recentlyViewedGames.isEmpty {
+                    recentlyExploredSection
+                }
+                
+                VStack(alignment: .leading, spacing: 14) {
+                    Text("Need some inspiration?")
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundStyle(Color.arconteTextPrimary)
+
+                    Text("Try searching for one of these games.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color.arconteTextSecondary)
+
+                    ForEach(searchSuggestions, id: \.self) { suggestion in
+                        Button {
+                            searchText = suggestion
+                            isSearchFocused = false
+                        } label: {
+                            HStack(spacing: 12) {
+                                Image(systemName: "magnifyingglass")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundStyle(Color.arcontePurple)
+
+                                Text(suggestion)
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundStyle(Color.arconteTextPrimary)
+
+                                Spacer()
+
+                                Image(systemName: "arrow.up.left")
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundStyle(Color.arconteTextSecondary)
+                            }
+                            .padding(.horizontal, 15)
+                            .frame(height: 52)
+                            .background(Color.arconteElevated)
+                            .clipShape(
+                                RoundedRectangle(
+                                    cornerRadius: 14,
+                                    style: .continuous
+                                )
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 12)
+            .padding(.bottom, 120)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+    
+    private var recentlyExploredSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Text("Recently Explored")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(Color.arconteTextPrimary)
+
+                Spacer()
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: 14) {
+                    ForEach(recentlyViewedGames.prefix(5)) { game in
+                        NavigationLink {
+                            GameDetailsView(gameID: game.gameID)
+                        } label: {
+                            RecentlyViewedGameCard(game: game)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+    }
+    
+    private var minimumQueryState: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "text.magnifyingglass")
+                .font(.system(size: 32))
+                .foregroundStyle(Color.arcontePurple)
+
+            Text("Keep typing")
+                .font(.system(size: 17, weight: .bold))
+                .foregroundStyle(Color.arconteTextPrimary)
+
+            Text("Enter at least 2 characters to search for games.")
+                .font(.system(size: 13))
+                .foregroundStyle(Color.arconteTextSecondary)
+                .multilineTextAlignment(.center)
+        }
+        .padding(.horizontal, 30)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }

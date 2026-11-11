@@ -161,20 +161,4 @@ struct MainTabView: View {
         .accessibilityLabel(tab.accessibilityName)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
-    
-    private func placeholderView(
-        title: String,
-        description: String,
-        icon: String
-    ) -> some View {
-        NavigationStack {
-            ContentUnavailableView(
-                title,
-                systemImage: icon,
-                description: Text(description)
-            )
-            .background(Color.arconteBackground)
-            .toolbar(.hidden)
-        }
-    }
 }

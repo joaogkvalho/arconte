@@ -40,6 +40,10 @@ final class APIClient {
         
         do {
             (data, response) = try await session.data(for: request)
+        } catch let error as CancellationError {
+            throw error
+        } catch let error as URLError where error.code == .cancelled {
+            throw CancellationError()
         } catch {
             throw APIError.networkError(error)
         }
